@@ -19,11 +19,11 @@ define postgresql::server::grant_role (
   case $ensure {
     'present': {
       $command = "GRANT \"${group}\" TO \"${role}\""
-      $unless_comp = '='
+      $unless_not = ''
     }
     'absent': {
       $command = "REVOKE \"${group}\" FROM \"${role}\""
-      $unless_comp = '!='
+      $unless_not = 'NOT'
     }
     default: {
       fail("Unknown value for ensure '${ensure}'.")
@@ -32,7 +32,7 @@ define postgresql::server::grant_role (
 
   postgresql_psql { "grant_role:${name}":
     command          => $command,
-    unless           => "SELECT 1 WHERE pg_has_role('${role}', '${group}', 'MEMBER') ${unless_comp} true",
+    unless           => "SELECT 1 WHERE ${unless_not} EXISTS (SELECT 1 FROM pg_auth_members am WHERE am.roleid = '${group}'::regrole AND am.member = '${role}'::regrole)",
     db               => $psql_db,
     psql_user        => $psql_user,
     port             => $port,
