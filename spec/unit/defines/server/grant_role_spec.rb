@@ -26,7 +26,7 @@ describe 'postgresql::server::grant_role', :type => :define do
     it {
       is_expected.to contain_postgresql_psql("grant_role:#{title}").with({
         :command => "GRANT \"#{params[:group]}\" TO \"#{params[:role]}\"",
-        :unless  => "SELECT 1 WHERE pg_has_role('#{params[:role]}', '#{params[:group]}', 'MEMBER') = true",
+        :unless  => "SELECT 1 WHERE  EXISTS (SELECT 1 FROM pg_auth_members am WHERE am.roleid = '#{params[:group]}'::regrole AND am.member = '#{params[:role]}'::regrole)",
       }).that_requires('Class[postgresql::server]')
     }
   end
@@ -87,7 +87,7 @@ describe 'postgresql::server::grant_role', :type => :define do
     it {
       is_expected.to contain_postgresql_psql("grant_role:#{title}").with({
         :command => "GRANT \"#{params[:group]}\" TO \"#{params[:role]}\"",
-        :unless  => "SELECT 1 WHERE pg_has_role('#{params[:role]}', '#{params[:group]}', 'MEMBER') = true",
+        :unless  => "SELECT 1 WHERE  EXISTS (SELECT 1 FROM pg_auth_members am WHERE am.roleid = '#{params[:group]}'::regrole AND am.member = '#{params[:role]}'::regrole)",
         :db        => params[:psql_db],
         :psql_user => params[:psql_user],
         :port      => params[:port],
@@ -103,7 +103,7 @@ describe 'postgresql::server::grant_role', :type => :define do
     it {
       is_expected.to contain_postgresql_psql("grant_role:#{title}").with({
         :command => "REVOKE \"#{params[:group]}\" FROM \"#{params[:role]}\"",
-        :unless  => "SELECT 1 WHERE pg_has_role('#{params[:role]}', '#{params[:group]}', 'MEMBER') != true",
+        :unless  => "SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM pg_auth_members am WHERE am.roleid = '#{params[:group]}'::regrole AND am.member = '#{params[:role]}'::regrole)",
       }).that_requires('Class[postgresql::server]')
     }
   end
